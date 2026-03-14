@@ -7,76 +7,83 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
+<style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0f172a;
-            color: #e2e8f0;
+            color: #f8fafc;
             overflow: hidden;
-            transition: background-color 0.5s ease;
+            transition: background 0.8s ease;
         }
 
-        body.theme-blue { background: radial-gradient(circle at top right, #1e293b, #0f172a); }
-        body.theme-green { background: radial-gradient(circle at top right, #14532d, #052e16); }
-        body.theme-amber { background: radial-gradient(circle at top right, #451a03, #2a1205); }
+        /* Upgraded Premium Gradients */
+        body.theme-blue { background: radial-gradient(circle at 80% 0%, #1e293b, #020617); }
+        body.theme-green { background: radial-gradient(circle at 80% 0%, #14532d, #022c22); }
+        body.theme-amber { background: radial-gradient(circle at 80% 0%, #451a03, #2a1205); }
 
-        body.theme-blue #app-container { background-color: #0f172a; }
-        body.theme-green #app-container { background-color: #022c22; }
-        body.theme-amber #app-container { background-color: #2a1205; }
+        body.theme-blue #app-container { background-color: transparent; }
+        body.theme-green #app-container { background-color: transparent; }
+        body.theme-amber #app-container { background-color: transparent; }
 
-        /* Glassmorphism Utilities */
+        /* Refined Enterprise Glassmorphism */
         .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
         
         .glass-card {
-            background: rgba(51, 65, 85, 0.6);
-            backdrop-filter: blur(8px);
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.4) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1rem;
-        }
-
-        .glass-panel {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
         }
 
         /* Animations */
         .fade-in {
-            animation: fadeIn 0.3s ease-in-out;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Mobile Layout */
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* Mobile Layout Refinements */
         #app-container {
             max-width: 480px;
             margin: 0 auto;
             height: 100dvh;
             display: flex;
             flex-direction: column;
-            background-color: #0f172a;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
         }
 
         #content-area {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 80px;
+            padding-bottom: 90px;
             scrollbar-width: none;
+            scroll-behavior: smooth;
         }
-        #content-area::-webkit-scrollbar {
-            display: none;
-        }
+        #content-area::-webkit-scrollbar { display: none; }
 
         /* Gauge Progress */
         .circular-chart {
@@ -84,20 +91,18 @@
             margin: 0 auto;
             max-width: 80%;
             max-height: 250px;
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.3));
         }
         .circle-bg {
             fill: none;
-            stroke: #334155;
-            stroke-width: 3.8;
+            stroke: rgba(51, 65, 85, 0.5);
+            stroke-width: 3;
         }
         .circle {
             fill: none;
-            stroke-width: 2.8;
+            stroke-width: 3;
             stroke-linecap: round;
-            animation: progress 1s ease-out forwards;
-        }
-        @keyframes progress {
-            0% { stroke-dasharray: 0 100; }
+            transition: stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Status Colors */
@@ -105,24 +110,26 @@
         .theme-green .accent-text { color: #4ade80; }
         .theme-amber .accent-text { color: #fbbf24; }
     </style>
-</head>
-<body class="theme-blue">
-
-    <div id="app-container">
-        <header class="glass z-20 px-6 py-4 flex justify-between items-center sticky top-0">
+<header class="glass z-20 px-6 py-4 flex justify-between items-center sticky top-0 border-b border-slate-700/50">
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <i class="fa-solid fa-bolt text-yellow-400"></i> HiRES
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                        <i class="fa-solid fa-bolt text-white text-sm"></i>
+                    </div>
+                    HiRES
                 </h1>
-                <p class="text-xs text-slate-400" id="connection-status">Online • Updating (3s)</p>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <div id="weather-temp" class="text-sm font-semibold">--°C</div>
-                    <div id="weather-desc" class="text-xs text-slate-400">Loading...</div>
+                <div class="flex items-center gap-1.5 mt-1">
+                    <div class="w-2 h-2 rounded-full bg-green-500 pulse-dot" id="live-indicator"></div>
+                    <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider" id="connection-status">System Online</p>
                 </div>
-                <div id="weather-icon" class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                    <i class="fa-solid fa-cloud text-slate-400 text-xs"></i>
+            </div>
+            <div class="flex items-center gap-3 bg-slate-800/50 py-1.5 px-3 rounded-2xl border border-slate-700/50">
+                <div class="text-right">
+                    <div id="weather-temp" class="text-sm font-bold text-slate-100">--°C</div>
+                    <div id="weather-desc" class="text-[10px] text-slate-400 font-medium">Loading...</div>
+                </div>
+                <div id="weather-icon" class="text-cyan-400 text-lg">
+                    <i class="fa-solid fa-cloud"></i>
                 </div>
             </div>
         </header>
