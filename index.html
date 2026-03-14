@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
+    <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         body {
@@ -22,10 +22,6 @@
         body.theme-blue { background: radial-gradient(circle at 80% 0%, #1e293b, #020617); }
         body.theme-green { background: radial-gradient(circle at 80% 0%, #14532d, #022c22); }
         body.theme-amber { background: radial-gradient(circle at 80% 0%, #451a03, #2a1205); }
-
-        body.theme-blue #app-container { background-color: transparent; }
-        body.theme-green #app-container { background-color: transparent; }
-        body.theme-amber #app-container { background-color: transparent; }
 
         /* Refined Enterprise Glassmorphism */
         .glass {
@@ -47,23 +43,25 @@
         }
 
         /* Animations */
-        .fade-in {
-            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .pulse-dot {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
+        .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
         }
+
+        /* App Modal Spring Animation Classes */
+        .modal-overlay { transition: opacity 0.3s ease-out; }
+        .modal-content { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        /* Hide Scrollbar for Horizontal Lists */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* Mobile Layout Refinements */
         #app-container {
@@ -74,6 +72,7 @@
             flex-direction: column;
             position: relative;
             box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            background: transparent;
         }
 
         #content-area {
@@ -85,32 +84,12 @@
         }
         #content-area::-webkit-scrollbar { display: none; }
 
-        /* Gauge Progress */
-        .circular-chart {
-            display: block;
-            margin: 0 auto;
-            max-width: 80%;
-            max-height: 250px;
-            filter: drop-shadow(0 0 8px rgba(0,0,0,0.3));
-        }
-        .circle-bg {
-            fill: none;
-            stroke: rgba(51, 65, 85, 0.5);
-            stroke-width: 3;
-        }
-        .circle {
-            fill: none;
-            stroke-width: 3;
-            stroke-linecap: round;
-            transition: stroke-dasharray 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Status Colors */
-        .theme-blue .accent-text { color: #38bdf8; }
-        .theme-green .accent-text { color: #4ade80; }
-        .theme-amber .accent-text { color: #fbbf24; }
     </style>
-<header class="glass z-20 px-6 py-4 flex justify-between items-center sticky top-0 border-b border-slate-700/50">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Header -->
+        <header class="glass z-20 px-6 py-4 flex justify-between items-center sticky top-0 border-b border-slate-700/50">
             <div>
                 <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30">
@@ -134,9 +113,10 @@
             </div>
         </header>
 
-        <main id="content-area" class="px-4 py-4 space-y-4">
-            </main>
+        <!-- Main Content Area -->
+        <main id="content-area" class="px-4 py-4 space-y-4"></main>
 
+        <!-- Bottom Navigation -->
         <nav class="glass absolute bottom-0 w-full pb-safe pt-2 px-6 pb-4 flex justify-between items-center z-30 rounded-t-2xl border-t border-slate-700">
             <button onclick="navigateTo('dashboard')" class="nav-btn active flex flex-col items-center gap-1 text-cyan-400 transition-colors">
                 <i class="fa-solid fa-chart-pie text-xl"></i>
@@ -161,6 +141,7 @@
             </button>
         </nav>
 
+        <!-- Action Menu Overlay -->
         <div id="action-menu" class="fixed inset-0 bg-black/80 z-40 hidden flex items-end justify-center pb-24 px-4 backdrop-blur-sm">
             <div class="w-full max-w-[440px] glass-card p-6 transform transition-all translate-y-full opacity-0" id="action-sheet">
                 <h3 class="text-lg font-bold mb-4">Quick Controls</h3>
@@ -184,75 +165,61 @@
                 </div>
             </div>
         </div>
+
+        <!-- Professional "Mac-like" Full Screen Modal -->
+        <div id="app-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay opacity-0 pointer-events-none bg-black/70 backdrop-blur-sm">
+            <div id="app-modal-content" class="w-full max-w-md max-h-[90vh] glass-card flex flex-col overflow-y-auto scrollbar-hide modal-content scale-75 translate-y-10 opacity-0 relative">
+                <!-- Content injected dynamically via JS -->
+            </div>
+        </div>
+
     </div>
 
     <script>
         // --- State Management ---
         const state = {
             view: 'dashboard',
+            detailView: null, // Track if 'solar' or 'wind' modal is open
             theme: 'blue',
-            weather: { temp: 20, condition: 'Clear', windSpeed: 5, cloudCover: 10, isDay: true, irradiance: 800 },
+            weather: { 
+                temp: 20, 
+                humidity: 45,
+                condition: 'Clear', 
+                windSpeed: 5, 
+                cloudCover: 10, 
+                isDay: true, 
+                irradiance: 800,
+                forecast:[
+                    { day: 'Mon', temp: 32, icon: 'fa-sun', condition: 'text-yellow-400' },
+                    { day: 'Tue', temp: 30, icon: 'fa-cloud-sun', condition: 'text-yellow-300' },
+                    { day: 'Wed', temp: 28, icon: 'fa-cloud-rain', condition: 'text-blue-400' },
+                    { day: 'Thu', temp: 29, icon: 'fa-cloud', condition: 'text-slate-400' },
+                    { day: 'Fri', temp: 31, icon: 'fa-sun', condition: 'text-yellow-400' },
+                    { day: 'Sat', temp: 33, icon: 'fa-sun', condition: 'text-yellow-400' },
+                    { day: 'Sun', temp: 32, icon: 'fa-cloud-sun', condition: 'text-yellow-300' }
+                ]
+            },
             system: {
                 battery: { capacity: 10000, current: 7500, percentage: 75, status: 'Discharging', health: 98 },
-                solar: { installed: 5000, current: 0, efficiency: 0.18, status: 'Online' },
-                wind: { installed: 2000, current: 0, status: 'Online' },
+                solar: { installed: 5000, current: 0, efficiency: 18.5, status: 'Online', panelTemp: 45 },
+                wind: { installed: 2000, current: 0, status: 'Online', turbineSpeed: 0 },
                 inverter: { capacity: 3000, load: 0, efficiency: 0.92, status: 'Online' },
                 loads: { dc: 150, ac: 450, bulbActive: true },
-                priority: 'auto'
+                priority: 'auto',
+                co2Saved: 125.4 // in kg
             },
-            history: { solar: [], wind: [], battery: [], timeLabels: [] }
+            history: { solar: [], wind: [], battery: [], timeLabels:[] }
         };
 
-        // --- ThingSpeak Configuration ---
         const CLOUD_CONFIG = {
             enabled: true,
-            channelID: 3221689,           // UPDATED: Your Channel ID
-            writeKey: "8ER3WZZ2T8VJBGU5", // Your Write Key
-            readKey: "G5BM0SGNZUB9W3ST",  // Your Read Key
+            channelID: 3221689,
+            writeKey: "8ER3WZZ2T8VJBGU5",
+            readKey: "G5BM0SGNZUB9W3ST",
             lastUpdate: 0
         };
 
         let historyChart = null;
-
-        // --- Cloud Backend Logic ---
-        async function sendToThingSpeak() {
-            if (!CLOUD_CONFIG.enabled) return;
-
-            // Rate Limit Check (ThingSpeak Free Tier: 1 update per 15s)
-            const now = Date.now();
-            if (now - CLOUD_CONFIG.lastUpdate < 20000) return; // Keeps cloud sync at 20s to be safe
-
-            try {
-                const f1 = state.system.solar.current;
-                const f2 = state.system.wind.current;
-                const f3 = state.system.battery.percentage;
-                const f4 = state.system.inverter.load + state.system.loads.dc;
-
-                const url = `https://api.thingspeak.com/update?api_key=${CLOUD_CONFIG.writeKey}&field1=${f1}&field2=${f2}&field3=${f3}&field4=${f4}`;
-
-                const statusEl = document.getElementById('connection-status');
-                statusEl.innerText = "☁️ Uploading...";
-                statusEl.classList.add('text-cyan-400');
-
-                const response = await fetch(url);
-                
-                if (response.ok) {
-                    console.log(`ThingSpeak Sync Success: Solar=${f1}W`);
-                    CLOUD_CONFIG.lastUpdate = now;
-                    statusEl.innerText = "Online • Cloud Synced";
-                } else {
-                    console.warn("ThingSpeak Error. Check Channel ID.");
-                }
-                
-                setTimeout(() => {
-                    statusEl.classList.remove('text-cyan-400');
-                    if (statusEl.innerText === "☁️ Uploading...") statusEl.innerText = "Online • Monitoring";
-                }, 2000);
-
-            } catch (error) {
-                console.error("Cloud Upload Failed:", error);
-            }
-        }
 
         // --- Core Simulation Logic ---
         function updateSimulation() {
@@ -262,37 +229,41 @@
             const solarNoise = 1 + (Math.random() * 0.05 - 0.025);
             state.system.solar.current = Math.max(0, Math.round(state.system.solar.installed * solarFactor * (state.weather.irradiance / 1000) * solarNoise));
             if(state.system.solar.current > state.system.solar.installed) state.system.solar.current = state.system.solar.installed;
+            
+            // Dynamic Solar Temp & Eff
+            state.system.solar.panelTemp = (state.weather.isDay ? 35 : 15) + (state.weather.irradiance / 100) + (Math.random() * 2 - 1);
+            state.system.solar.efficiency = 18.5 - ((state.system.solar.panelTemp - 25) * 0.04); // Temp coefficient drop
 
             // Wind Calculation
             const windSpeed = state.weather.windSpeed;
             let windPower = 0;
             if (windSpeed >= 3 && windSpeed <= 25) {
                 const ratedSpeed = 12;
-                if (windSpeed >= ratedSpeed) {
-                    windPower = state.system.wind.installed;
-                } else {
-                    windPower = state.system.wind.installed * Math.pow((windSpeed - 3) / (ratedSpeed - 3), 3);
-                }
+                if (windSpeed >= ratedSpeed) windPower = state.system.wind.installed;
+                else windPower = state.system.wind.installed * Math.pow((windSpeed - 3) / (ratedSpeed - 3), 3);
             }
             const windNoise = 1 + (Math.random() * 0.1 - 0.05);
             state.system.wind.current = Math.max(0, Math.round(windPower * windNoise));
+            
+            // Dynamic Turbine RPM based on wind output
+            state.system.wind.turbineSpeed = state.system.wind.current > 0 ? (state.weather.windSpeed * 8) + (Math.random() * 5) : 0;
 
-            // Load Management
+            // Load & Battery Management
             let totalDCGeneration = state.system.solar.current + state.system.wind.current;
-            let acLoadWatts = state.system.loads.ac + (state.system.loads.bulbActive ? 20 : 0);
-            acLoadWatts += Math.round(Math.random() * 20 - 10);
+            let acLoadWatts = state.system.loads.ac + (state.system.loads.bulbActive ? 20 : 0) + Math.round(Math.random() * 20 - 10);
             if(acLoadWatts < 0) acLoadWatts = 0;
             
             let dcRequiredForInverter = acLoadWatts / state.system.inverter.efficiency;
             state.system.inverter.load = acLoadWatts;
             let totalConsumption = state.system.loads.dc + dcRequiredForInverter;
 
-            // Battery Logic (UPDATED FOR 3-SECOND TICK)
             let netPower = totalDCGeneration - totalConsumption;
-            // Energy = Power * Time. Since time is 3s, we use 3/3600 hours
-            let energyChangeWh = netPower * (3 / 3600); 
+            let energyChangeWh = netPower * (3 / 3600); // 3-second tick
             state.system.battery.current += energyChangeWh;
             
+            // Increment CO2 saved
+            state.system.co2Saved += (totalDCGeneration * (3/3600) / 1000) * 0.4; // rough approx kg CO2/kWh
+
             if (state.system.battery.current > state.system.battery.capacity) {
                 state.system.battery.current = state.system.battery.capacity;
                 state.system.battery.status = 'Fully Charged';
@@ -304,19 +275,14 @@
             }
             state.system.battery.percentage = ((state.system.battery.current / state.system.battery.capacity) * 100).toFixed(1);
 
-            automateSystem();
-
-            // Update history chart occasionally
-            if (new Date().getSeconds() % 5 === 0) updateHistory();
-
+            // Update Views
             if (document.getElementById('dash-view')) updateDashboardUI();
             if (document.getElementById('system-view')) updateSystemUI();
-        }
-
-        function automateSystem() {
-            if (state.system.battery.percentage < 20 && state.system.priority === 'auto') {
-                if (state.system.loads.ac > 200) console.log("Auto-Balancing: Reducing AC Load");
-            }
+            
+            // Update Modal Live Data if open
+            if (state.detailView) updateDetailUI();
+            
+            if (new Date().getSeconds() % 5 === 0) updateHistory();
         }
 
         function updateHistory() {
@@ -327,10 +293,8 @@
             state.history.battery.push(state.system.battery.percentage);
             state.history.timeLabels.push(timeLabel);
             if (state.history.solar.length > 20) {
-                state.history.solar.shift();
-                state.history.wind.shift();
-                state.history.battery.shift();
-                state.history.timeLabels.shift();
+                state.history.solar.shift(); state.history.wind.shift();
+                state.history.battery.shift(); state.history.timeLabels.shift();
             }
             if (state.view === 'analysis' && historyChart) {
                 historyChart.data.labels = state.history.timeLabels;
@@ -340,19 +304,17 @@
             }
         }
 
-        // --- Weather API Integration ---
+        // --- Weather & Cloud APIs ---
         async function fetchWeather() {
             try {
-                // Coordinates for Hyderabad region
-                const lat = 17.2064;
-                const lon = 78.6011;
+                const lat = 17.2064, lon = 78.6011;
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,is_day,precipitation,cloud_cover,wind_speed_10m,direct_radiation`;
-                
                 const response = await fetch(url);
                 const data = await response.json();
                 const current = data.current;
                 
                 state.weather.temp = current.temperature_2m;
+                state.weather.humidity = current.relative_humidity_2m;
                 state.weather.windSpeed = (current.wind_speed_10m / 3.6).toFixed(1); 
                 state.weather.cloudCover = current.cloud_cover;
                 state.weather.isDay = current.is_day === 1;
@@ -365,8 +327,21 @@
 
                 updateWeatherUI();
             } catch (error) {
-                console.error("Weather API failed", error);
-                document.getElementById('connection-status').innerText = 'Offline • Simulated Data';
+                console.warn("Weather API Simulated");
+            }
+        }
+
+        async function sendToThingSpeak() {
+            if (!CLOUD_CONFIG.enabled) return;
+            const now = Date.now();
+            if (now - CLOUD_CONFIG.lastUpdate < 20000) return; 
+
+            try {
+                const url = `https://api.thingspeak.com/update?api_key=${CLOUD_CONFIG.writeKey}&field1=${state.system.solar.current}&field2=${state.system.wind.current}&field3=${state.system.battery.percentage}&field4=${state.system.inverter.load + state.system.loads.dc}`;
+                await fetch(url);
+                CLOUD_CONFIG.lastUpdate = now;
+            } catch (error) {
+                console.error("Cloud Upload Failed");
             }
         }
 
@@ -382,7 +357,181 @@
             iconContainer.innerHTML = `<i class="fa-solid ${iconClass} ${state.weather.isDay ? 'text-yellow-400' : 'text-slate-300'} text-lg"></i>`;
         }
 
-        // --- Navigation & View Rendering ---
+        // --- Mac-like Detail Modal Logic ---
+        function openDetail(type) {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('app-modal-content');
+            
+            // Build Structure
+            content.innerHTML = type === 'solar' ? generateSolarDetails() : generateWindDetails();
+            
+            // Trigger Animation
+            modal.classList.remove('pointer-events-none');
+            modal.classList.add('opacity-100');
+            
+            // Small delay for spring content animation
+            setTimeout(() => {
+                content.classList.remove('opacity-0', 'scale-75', 'translate-y-10');
+                content.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+            }, 10);
+
+            state.detailView = type;
+            updateDetailUI();
+        }
+
+        function closeDetail() {
+            const modal = document.getElementById('app-modal');
+            const content = document.getElementById('app-modal-content');
+            
+            // Reverse Animation
+            content.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+            content.classList.add('opacity-0', 'scale-75', 'translate-y-10');
+            modal.classList.remove('opacity-100');
+            modal.classList.add('pointer-events-none');
+
+            setTimeout(() => {
+                state.detailView = null;
+                content.innerHTML = '';
+            }, 300);
+        }
+
+        function generateForecastHTML() {
+            let html = `<div class="w-full flex overflow-x-auto gap-3 pb-2 pt-1 scrollbar-hide">`;
+            state.weather.forecast.forEach(day => {
+                html += `
+                <div class="flex-shrink-0 w-[4.5rem] glass bg-slate-800/60 rounded-xl p-3 flex flex-col items-center justify-center border border-slate-700/50 hover:bg-slate-700 transition">
+                    <span class="text-xs text-slate-400 mb-1 font-medium">${day.day}</span>
+                    <i class="fa-solid ${day.icon} ${day.condition} text-xl mb-2 drop-shadow-md"></i>
+                    <span class="text-sm font-bold text-white">${day.temp}°</span>
+                </div>`;
+            });
+            html += `</div>`;
+            return html;
+        }
+
+        function generateSolarDetails() {
+            return `
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg shadow-orange-500/30 flex items-center justify-center relative">
+                            <i class="fa-solid fa-solar-panel text-white text-xl"></i>
+                            <i class="fa-solid fa-sun text-yellow-200 text-xs absolute -top-1 -right-1"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white tracking-tight">Solar Array</h2>
+                            <p class="text-xs text-slate-400">Monocrystalline 5kW System</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDetail()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-bolt text-yellow-500"></i> Output</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-solar-val">0</span> <span class="text-sm font-normal text-slate-400">W</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-temperature-half text-red-400"></i> Panel Temp</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-solar-temp">0.0</span> <span class="text-sm font-normal text-slate-400">°C</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-percent text-green-400"></i> Efficiency</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-solar-eff">0.0</span> <span class="text-sm font-normal text-slate-400">%</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-circle-check text-cyan-400"></i> Status</div>
+                        <div class="text-xl font-bold text-white mt-1">Optimal</div>
+                    </div>
+                </div>
+
+                <!-- Forecast -->
+                <h3 class="text-sm font-semibold text-slate-200 mb-3">7-Day Forecast</h3>
+                ${generateForecastHTML()}
+            </div>`;
+        }
+
+        function generateWindDetails() {
+            return `
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-blue-500/30 flex items-center justify-center">
+                            <i class="fa-solid fa-wind text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-white tracking-tight">Wind Turbine</h2>
+                            <p class="text-xs text-slate-400">Vertical Axis 2kW System</p>
+                        </div>
+                    </div>
+                    <button onclick="closeDetail()" class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-bolt text-blue-400"></i> Output</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-wind-val">0</span> <span class="text-sm font-normal text-slate-400">W</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-fan text-slate-300"></i> Turbine Speed</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-wind-rpm">0</span> <span class="text-sm font-normal text-slate-400">RPM</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-wind text-cyan-400"></i> Wind Speed</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-wind-speed">0.0</span> <span class="text-sm font-normal text-slate-400">m/s</span></div>
+                    </div>
+                    <div class="glass bg-slate-800/40 p-4 rounded-2xl border border-slate-700/50">
+                        <div class="text-xs font-medium text-slate-400 mb-1 flex items-center gap-1"><i class="fa-solid fa-droplet text-blue-300"></i> Humidity</div>
+                        <div class="text-2xl font-bold text-white"><span id="modal-wind-humidity">0</span> <span class="text-sm font-normal text-slate-400">%</span></div>
+                    </div>
+                </div>
+
+                <div class="glass bg-green-500/10 border border-green-500/30 p-4 rounded-2xl mb-6 flex justify-between items-center">
+                    <div>
+                        <div class="text-xs text-green-300/80 mb-1 font-medium">CO2 Emissions Saved</div>
+                        <div class="text-xl font-bold text-green-400"><span id="modal-wind-co2">0.00</span> kg</div>
+                    </div>
+                    <i class="fa-solid fa-leaf text-green-400/50 text-3xl"></i>
+                </div>
+
+                <!-- Forecast -->
+                <h3 class="text-sm font-semibold text-slate-200 mb-3">7-Day Forecast</h3>
+                ${generateForecastHTML()}
+            </div>`;
+        }
+
+        function updateDetailUI() {
+            if (state.detailView === 'solar') {
+                const outEl = document.getElementById('modal-solar-val');
+                const tempEl = document.getElementById('modal-solar-temp');
+                const effEl = document.getElementById('modal-solar-eff');
+                if(outEl) outEl.innerText = state.system.solar.current;
+                if(tempEl) tempEl.innerText = state.system.solar.panelTemp.toFixed(1);
+                if(effEl) effEl.innerText = Math.max(0, state.system.solar.efficiency).toFixed(1);
+            } else if (state.detailView === 'wind') {
+                const outEl = document.getElementById('modal-wind-val');
+                const rpmEl = document.getElementById('modal-wind-rpm');
+                const spdEl = document.getElementById('modal-wind-speed');
+                const humEl = document.getElementById('modal-wind-humidity');
+                const co2El = document.getElementById('modal-wind-co2');
+                if(outEl) outEl.innerText = state.system.wind.current;
+                if(rpmEl) rpmEl.innerText = Math.round(state.system.wind.turbineSpeed);
+                if(spdEl) spdEl.innerText = state.weather.windSpeed;
+                if(humEl) humEl.innerText = state.weather.humidity;
+                if(co2El) co2El.innerText = state.system.co2Saved.toFixed(2);
+            }
+        }
+
+
+        // --- Views ---
         function navigateTo(viewName) {
             state.view = viewName;
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -406,6 +555,8 @@
         function renderDashboard(container) {
             container.innerHTML = `
                 <div id="dash-view" class="space-y-4 fade-in">
+                    
+                    <!-- Battery Card -->
                     <div class="glass-card p-5 relative overflow-hidden">
                         <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-battery-full text-8xl"></i></div>
                         <h2 class="text-sm font-semibold text-slate-300 mb-4">Storage (Li-ion 10kWh)</h2>
@@ -423,41 +574,49 @@
                             <div id="batt-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="glass-card p-4 flex flex-col items-center justify-center relative">
-                            <div class="absolute top-2 left-3 text-xs text-slate-400 flex items-center gap-1"><i class="fa-solid fa-sun text-yellow-500"></i> Solar</div>
-                            <div class="mt-4 relative">
-                                <svg viewBox="0 0 36 36" class="circular-chart w-20 h-20">
-                                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path id="solar-circle" class="circle stroke-yellow-500" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center flex-col"><span id="solar-val" class="text-lg font-bold">0</span><span class="text-[10px] text-slate-400">W</span></div>
+
+                    <!-- Professional App-Like Generation Icons -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="openDetail('solar')" class="glass-card p-5 flex flex-col items-center justify-center relative hover:bg-slate-800/60 transition-all transform active:scale-95 duration-300 border border-slate-700/50">
+                            <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-xl border border-slate-700/50 flex items-center justify-center mb-3">
+                                <i class="fa-solid fa-solar-panel text-blue-400 text-3xl relative z-10"></i>
+                                <i class="fa-solid fa-sun text-yellow-500 text-xl absolute -top-1.5 -right-1.5 animate-[spin_8s_linear_infinite] drop-shadow-[0_0_8px_rgba(234,179,8,0.6)]"></i>
                             </div>
-                        </div>
-                        <div class="glass-card p-4 flex flex-col items-center justify-center relative">
-                            <div class="absolute top-2 left-3 text-xs text-slate-400 flex items-center gap-1"><i class="fa-solid fa-wind text-blue-400"></i> Wind</div>
-                            <div class="mt-4 relative">
-                                <svg viewBox="0 0 36 36" class="circular-chart w-20 h-20">
-                                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                    <path id="wind-circle" class="circle stroke-blue-400" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                </svg>
-                                <div class="absolute inset-0 flex items-center justify-center flex-col"><span id="wind-val" class="text-lg font-bold">0</span><span class="text-[10px] text-slate-400">W</span></div>
+                            <span class="text-sm font-semibold text-slate-200">Solar Array</span>
+                            <div class="flex items-baseline gap-1 mt-1">
+                                <span class="text-lg font-bold text-yellow-400" id="dash-solar-val">0</span>
+                                <span class="text-[10px] text-slate-400">W</span>
                             </div>
-                        </div>
+                        </button>
+
+                        <button onclick="openDetail('wind')" class="glass-card p-5 flex flex-col items-center justify-center relative hover:bg-slate-800/60 transition-all transform active:scale-95 duration-300 border border-slate-700/50">
+                            <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-xl border border-slate-700/50 flex items-center justify-center mb-3">
+                                <i class="fa-solid fa-wind text-cyan-400 text-3xl"></i>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-200">Wind Turbine</span>
+                            <div class="flex items-baseline gap-1 mt-1">
+                                <span class="text-lg font-bold text-cyan-400" id="dash-wind-val">0</span>
+                                <span class="text-[10px] text-slate-400">W</span>
+                            </div>
+                        </button>
                     </div>
+
+                    <!-- Consumption Section -->
                     <div class="glass-card p-4">
                         <h3 class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wide">Consumption</h3>
                         <div class="space-y-4">
                             <div>
                                 <div class="flex justify-between text-sm mb-1"><span class="flex items-center gap-2"><i class="fa-solid fa-plug text-green-400"></i> AC Load</span><span class="font-bold"><span id="ac-load-val">0</span> W</span></div>
-                                <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="ac-bar" class="bg-green-400 h-full rounded-full" style="width: 0%"></div></div>
+                                <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="ac-bar" class="bg-green-400 h-full rounded-full transition-all" style="width: 0%"></div></div>
                             </div>
                             <div>
                                 <div class="flex justify-between text-sm mb-1"><span class="flex items-center gap-2"><i class="fa-solid fa-car-battery text-purple-400"></i> DC Load</span><span class="font-bold"><span id="dc-load-val">0</span> W</span></div>
-                                <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="dc-bar" class="bg-purple-400 h-full rounded-full" style="width: 0%"></div></div>
+                                <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="dc-bar" class="bg-purple-400 h-full rounded-full transition-all" style="width: 0%"></div></div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Alert -->
                     <div id="alert-area" class="hidden glass-card border-l-4 border-red-500 p-3 bg-red-500/10">
                         <div class="flex items-center gap-3"><i class="fa-solid fa-triangle-exclamation text-red-500"></i><div><div class="text-sm font-bold text-red-100">Warning</div><div class="text-xs text-red-200">Battery level critical (< 20%)</div></div></div>
                     </div>
@@ -489,21 +648,18 @@
             }
             document.getElementById('time-remaining').innerText = timeMsg;
 
-            document.getElementById('solar-val').innerText = state.system.solar.current;
-            const solarPct = (state.system.solar.current / state.system.solar.installed) * 100;
-            document.getElementById('solar-circle').setAttribute('stroke-dasharray', `${solarPct}, 100`);
+            // Update Dash Cards
+            const dashSolarVal = document.getElementById('dash-solar-val');
+            const dashWindVal = document.getElementById('dash-wind-val');
+            if(dashSolarVal) dashSolarVal.innerText = state.system.solar.current;
+            if(dashWindVal) dashWindVal.innerText = state.system.wind.current;
 
-            document.getElementById('wind-val').innerText = state.system.wind.current;
-            const windPct = (state.system.wind.current / state.system.wind.installed) * 100;
-            document.getElementById('wind-circle').setAttribute('stroke-dasharray', `${windPct}, 100`);
-
+            // Load Bars
             document.getElementById('ac-load-val').innerText = state.system.inverter.load;
-            const acPct = (state.system.inverter.load / state.system.inverter.capacity) * 100;
-            document.getElementById('ac-bar').style.width = `${acPct}%`;
+            document.getElementById('ac-bar').style.width = `${(state.system.inverter.load / state.system.inverter.capacity) * 100}%`;
 
             document.getElementById('dc-load-val').innerText = state.system.loads.dc;
-            const dcPct = (state.system.loads.dc / 1000) * 100;
-            document.getElementById('dc-bar').style.width = `${dcPct}%`;
+            document.getElementById('dc-bar').style.width = `${(state.system.loads.dc / 1000) * 100}%`;
 
             const alertArea = document.getElementById('alert-area');
             if (battPct < 20) alertArea.classList.remove('hidden'); else alertArea.classList.add('hidden');
@@ -519,7 +675,7 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="glass-card p-4"><div class="text-xs text-slate-400">Total Generated</div><div class="text-xl font-bold text-green-400 mt-1">12.5 kWh</div></div>
-                        <div class="glass-card p-4"><div class="text-xs text-slate-400">CO2 Saved</div><div class="text-xl font-bold text-cyan-400 mt-1">8.4 kg</div></div>
+                        <div class="glass-card p-4"><div class="text-xs text-slate-400">CO2 Saved</div><div class="text-xl font-bold text-cyan-400 mt-1">${state.system.co2Saved.toFixed(1)} kg</div></div>
                     </div>
                 </div>
             `;
@@ -529,7 +685,7 @@
                 type: 'line',
                 data: {
                     labels: state.history.timeLabels,
-                    datasets: [
+                    datasets:[
                         { label: 'Solar (W)', data: state.history.solar, borderColor: '#eab308', tension: 0.4, pointRadius: 0, borderWidth: 2 },
                         { label: 'Wind (W)', data: state.history.wind, borderColor: '#60a5fa', tension: 0.4, pointRadius: 0, borderWidth: 2 }
                     ]
@@ -542,17 +698,17 @@
             container.innerHTML = `
                 <div id="system-view" class="space-y-4 fade-in">
                     <h2 class="text-xl font-bold">Component Health</h2>
-                    ${renderComponentCard('sys-solar', 'Solar Arrays', '5kW Monocrystalline', state.system.solar.status, '18% Eff', 'fa-sun text-yellow-500')}
-                    ${renderComponentCard('sys-wind', 'Wind Turbine', '2kW Vertical Axis', state.system.wind.status, 'Optimal', 'fa-wind text-blue-400')}
-                    ${renderComponentCard('sys-batt', 'Battery Bank', '10kWh LiFePO4', state.system.battery.status, '98% SOH', 'fa-battery-full text-green-400')}
-                    ${renderComponentCard('sys-inv', 'Hybrid Inverter', '3kW Pure Sine Wave', state.system.inverter.status, '42°C', 'fa-server text-slate-400')}
+                    ${renderComponentCard('sys-solar', 'Solar Arrays', '5kW Monocrystalline', state.system.solar.status, 'fa-solar-panel text-yellow-500')}
+                    ${renderComponentCard('sys-wind', 'Wind Turbine', '2kW Vertical Axis', state.system.wind.status, 'fa-wind text-blue-400')}
+                    ${renderComponentCard('sys-batt', 'Battery Bank', '10kWh LiFePO4', state.system.battery.status, 'fa-battery-full text-green-400')}
+                    ${renderComponentCard('sys-inv', 'Hybrid Inverter', '3kW Pure Sine Wave', state.system.inverter.status, 'fa-server text-slate-400')}
                 </div>
             `;
         }
         
-        function renderComponentCard(id, title, subtitle, status, meta, iconClass) {
-            const statusColor = (status === 'Online' || status === 'Charging' || status === 'Discharging' || status === 'Fully Charged') ? 'text-green-400' : 'text-red-400';
-            return `<div class="glass-card p-4 flex items-center justify-between" id="${id}"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center"><i class="fa-solid ${iconClass} text-lg"></i></div><div><div class="font-semibold text-sm">${title}</div><div class="text-xs text-slate-400">${subtitle}</div></div></div><div class="text-right"><div id="${id}-status" class="text-xs font-bold ${statusColor}">${status}</div><div class="text-[10px] text-slate-500">${meta}</div></div></div>`;
+        function renderComponentCard(id, title, subtitle, status, iconClass) {
+            const isGood = (status === 'Online' || status === 'Charging' || status === 'Discharging' || status === 'Fully Charged');
+            return `<div class="glass-card p-4 flex items-center justify-between" id="${id}"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700/50 flex items-center justify-center"><i class="fa-solid ${iconClass} text-lg"></i></div><div><div class="font-semibold text-sm">${title}</div><div class="text-xs text-slate-400">${subtitle}</div></div></div><div class="text-right"><div id="${id}-status" class="text-xs font-bold ${isGood ? 'text-green-400' : 'text-red-400'}">${status}</div></div></div>`;
         }
 
         function updateSystemUI() {
@@ -567,33 +723,24 @@
                     <h2 class="text-xl font-bold">Configuration</h2>
                     <div class="glass-card p-4"><h3 class="text-sm font-semibold mb-4">Generation Priority</h3><div class="flex bg-slate-800 rounded-lg p-1"><button onclick="setPriority('auto')" class="flex-1 py-2 text-xs rounded-md font-medium transition-colors ${state.system.priority === 'auto' ? 'bg-cyan-600 text-white' : 'text-slate-400'}">Auto</button><button onclick="setPriority('solar')" class="flex-1 py-2 text-xs rounded-md font-medium transition-colors ${state.system.priority === 'solar' ? 'bg-cyan-600 text-white' : 'text-slate-400'}">Solar</button><button onclick="setPriority('wind')" class="flex-1 py-2 text-xs rounded-md font-medium transition-colors ${state.system.priority === 'wind' ? 'bg-cyan-600 text-white' : 'text-slate-400'}">Wind</button></div></div>
                     <div class="glass-card p-4"><h3 class="text-sm font-semibold mb-4">App Theme</h3><div class="flex gap-3"><button onclick="setTheme('blue')" class="w-10 h-10 rounded-full bg-slate-900 border-2 ${state.theme === 'blue' ? 'border-cyan-400' : 'border-slate-700'}"></button><button onclick="setTheme('green')" class="w-10 h-10 rounded-full bg-green-900 border-2 ${state.theme === 'green' ? 'border-green-400' : 'border-slate-700'}"></button><button onclick="setTheme('amber')" class="w-10 h-10 rounded-full bg-amber-900 border-2 ${state.theme === 'amber' ? 'border-amber-400' : 'border-slate-700'}"></button></div></div>
-                    <div class="glass-card p-4"><h3 class="text-sm font-semibold mb-4">Simulation</h3><div class="flex items-center justify-between py-2 border-b border-slate-700/50"><span class="text-sm">Simulate Night</span><button onclick="toggleDayNight()" class="text-xs bg-slate-700 px-3 py-1 rounded">Toggle</button></div><div class="flex items-center justify-between py-2"><span class="text-sm">Load (Bulb 20W)</span><button onclick="toggleLoad('bulb')" class="text-xs ${state.system.loads.bulbActive ? 'bg-green-600 text-white' : 'bg-slate-700'} px-3 py-1 rounded">Toggle</button></div></div>
+                    <div class="glass-card p-4"><h3 class="text-sm font-semibold mb-4">Simulation Override</h3><div class="flex items-center justify-between py-2 border-b border-slate-700/50"><span class="text-sm text-slate-300">Simulate Night</span><button onclick="toggleDayNight()" class="text-xs bg-slate-700 px-3 py-1 rounded">Toggle</button></div><div class="flex items-center justify-between py-2"><span class="text-sm text-slate-300">Load (Bulb 20W)</span><button onclick="toggleLoad('bulb')" class="text-xs ${state.system.loads.bulbActive ? 'bg-green-600 text-white' : 'bg-slate-700'} px-3 py-1 rounded">Toggle</button></div></div>
                 </div>
             `;
         }
 
-        // --- Helper Functions ---
+        // --- Core Application Functions ---
         function toggleActionMenu() { const m = document.getElementById('action-menu'), s = document.getElementById('action-sheet'); if (m.classList.contains('hidden')) { m.classList.remove('hidden'); setTimeout(() => s.classList.remove('translate-y-full', 'opacity-0'), 10); } else { s.classList.add('translate-y-full', 'opacity-0'); setTimeout(() => m.classList.add('hidden'), 300); } }
         function setPriority(p) { state.system.priority = p; if(state.view === 'settings') renderSettings(document.getElementById('content-area')); if(!document.getElementById('action-menu').classList.contains('hidden')) toggleActionMenu(); }
         function setTheme(t) { state.theme = t; document.body.className = `theme-${t}`; renderSettings(document.getElementById('content-area')); }
         function toggleLoad(t) { if (t === 'ac') state.system.loads.ac = state.system.loads.ac > 0 ? 0 : 450; else if (t === 'bulb') state.system.loads.bulbActive = !state.system.loads.bulbActive; if(state.view === 'settings') renderSettings(document.getElementById('content-area')); }
         function toggleDayNight() { state.weather.isDay = !state.weather.isDay; updateWeatherUI(); }
-        function toggleWind() { state.weather.windSpeed = state.weather.windSpeed > 10 ? 2 : 15; updateWeatherUI(); }
 
         // --- Initialization ---
         (function init() {
             fetchWeather();
-            
-            // 1. Start App Simulation (Updated to 3 seconds)
             setInterval(updateSimulation, 3000); 
-            
-            // 2. Start Cloud Backend (Sends data every 20s to stay within ThingSpeak limits)
             setInterval(sendToThingSpeak, 20000); 
-            
-            // 3. Start Weather Refresh
             setInterval(fetchWeather, 600000);
-            
-            // Render Initial View
             renderDashboard(document.getElementById('content-area'));
         })();
 
